@@ -1,0 +1,74 @@
+--- /usr/lib/python3/dist-packages/ansible/modules/files/lineinfile.py	2020-03-05 12:39:58.000000000 +0700
++++ mylineinfile.py	2023-04-28 18:17:24.959041464 +0700
+@@ -4,6 +4,7 @@
+ # Copyright: (c) 2012, Daniel Hokka Zakrisson <daniel@hozac.com>
+ # Copyright: (c) 2014, Ahti Kitsik <ak@ahtik.com>
+ # Copyright: (c) 2017, Ansible Project
++# Copyright: (c) 2023, Ivan I. Grushin <iigrushin@gmail.com>
+ # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ 
+ from __future__ import absolute_import, division, print_function
+@@ -120,6 +121,12 @@
+     type: bool
+     default: no
+     version_added: "2.5"
++  uniq:
++    description:
++      - If set, leaves only one (first) LINE in file, removing all other same lines
++    type: bool
++    default: no
++    version_added: "2.5"
+   others:
+     description:
+       - All arguments accepted by the M(file) module also work here.
+@@ -247,7 +254,7 @@
+ 
+ 
+ def present(module, dest, regexp, line, insertafter, insertbefore, create,
+-            backup, backrefs, firstmatch):
++            backup, backrefs, firstmatch, uniq):
+ 
+     diff = {'before': '',
+             'after': '',
+@@ -427,6 +434,16 @@
+         msg = 'line added'
+         changed = True
+ 
++
++    if uniq:
++      used=set()
++      prev_qty = len(b_lines)
++      b_lines = [ l for l in b_lines if l.rstrip(b'\r\n') != b_line or ( l not in used and (used.add(l) or True) ) ]
++      if len(b_lines) != prev_qty:
++        msg = 'made line unique'
++        changed = True
++
++
+     if module._diff:
+         diff['after'] = to_native(b''.join(b_lines))
+ 
+@@ -521,6 +538,7 @@
+             create=dict(type='bool', default=False),
+             backup=dict(type='bool', default=False),
+             firstmatch=dict(type='bool', default=False),
++            uniq=dict(type='bool', default=False),
+             validate=dict(type='str'),
+         ),
+         mutually_exclusive=[['insertbefore', 'insertafter']],
+@@ -534,6 +552,7 @@
+     backrefs = params['backrefs']
+     path = params['path']
+     firstmatch = params['firstmatch']
++    uniq = params['uniq']
+     regexp = params['regexp']
+     line = params['line']
+ 
+@@ -561,7 +580,7 @@
+             ins_aft = 'EOF'
+ 
+         present(module, path, regexp, line,
+-                ins_aft, ins_bef, create, backup, backrefs, firstmatch)
++                ins_aft, ins_bef, create, backup, backrefs, firstmatch, uniq)
+     else:
+         if regexp is None and line is None:
+             module.fail_json(msg='one of line or regexp is required with state=absent')
