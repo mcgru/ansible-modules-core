@@ -18,9 +18,10 @@ With uniq:yes non-uniq lines of 'line' content are deleted.
 ```
 cd $HOME/.ansible
 git clone git@github.com:mcgru/ansible-modules-core.git
+```
+### Per-project changes in ansible.cfg:
 
-## in ansible.cfg:
-
+```
 [defaults]
 ...
 library = $HOME/.ansible/ansible-modules-core:$HOME/.ansible/plugins/modules
